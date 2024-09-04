@@ -62,15 +62,17 @@ inline double addcost(
     double lbound,
     double rbound)
 {
-    if (layer > 1) {
-        if (layer==N and boundcon) {
-            return c[layer-1]*d + abs(x[layer-1] + d - pred) + abs(x[layer-1] + d - rbound);
+    if (layer > 1)
+    {
+        if (layer == N and boundcon)
+        {
+            return c[layer - 1] * d + abs(x[layer - 1] + d - pred) + abs(x[layer - 1] + d - rbound);
         }
-        return c[layer-1]*d + abs(x[layer-1] + d - pred);
+        return c[layer - 1] * d + abs(x[layer - 1] + d - pred);
     }
-        
-    if (boundcon) {
-        return c[layer - 1] * d + abs(x[layer-1]+d- lbound);
+    if (boundcon)
+    {
+        return c[layer - 1] * d + abs(x[layer - 1] + d - lbound);
     }
     return c[layer - 1] * d;
 }
@@ -95,21 +97,22 @@ void trs4slip_astar(
 {
     assert(delta >= 0.);
 
-    double offset = abs(c[N-1])  * max( x[N-1]  - bangs[0]  , bangs[M-1] - x[N-1]);
+    double offset = abs(c[N-1]) * max(x[N-1] - bangs[0], bangs[M-1] - x[N-1]);
     for (int i = N - 2; i >= 0; i--)
     {
-        double const max_element = abs(c[i]) * max(x[i] - bangs[0] , bangs[M-1] - x[i]);
+        double const max_element = abs(c[i]) * max(x[i] - bangs[0], bangs[M-1] - x[i]);
         if (offset < max_element)
             offset = max_element;
     }
 
     vector<double> tv(N);
     tv[N - 1] = 0.;
-    if (boundcon) {
-        tv[N-1] = abs(rbound-x[N-1]);
+    if (boundcon)
+    {
+        tv[N - 1] = abs(rbound - x[N - 1]);
     }
-    for (int i= 1; i < N; i++)
-        tv[N-i-1] = abs(x[N-i] - x[N-i-1]) + tv[N-i];
+    for (int i = 1; i < N; i++)
+        tv[N - i - 1] = abs(x[N - i] - x[N - i - 1]) + tv[N - i];
 
     vector<double> penaltylist;
     penaltylist.reserve(NUM_RUNS_MAX);
@@ -118,34 +121,35 @@ void trs4slip_astar(
     for (int i = 0; i < N * M + 1; i++)
         cost_dict.reserve(NUM_RUNS_MAX);
 
-    int penalty_num = 0;  
+    int penalty_num = 0;
     int num_runs = NUM_RUNS_MAX;
     double ub = numeric_limits<double>::max();
 
-    if(binsearch(&x_next_out[0], cost_dict, penaltylist, penalty_num, num_runs, ub,
-                delta, N, M, &c[0], &x[0], &bangs[0], offset, boundcon, lbound, rbound))
+    if (binsearch(&x_next_out[0], cost_dict, penaltylist, penalty_num, num_runs, ub,
+                  delta, N, M, &c[0], &x[0], &bangs[0], offset, boundcon, lbound, rbound))
         return;
 
-    fill(&vert_costs_buffer[0], &vert_costs_buffer[N*M*(delta + 1) + 2], numeric_limits<double>::max());
-    std::vector<bool> visited(N*M*(delta+1)+2, false);
+    fill(&vert_costs_buffer[0], &vert_costs_buffer[N * M * (delta + 1) + 2], numeric_limits<double>::max());
+    std::vector<bool> visited(N * M * (delta + 1) + 2, false);
 
     double penalty;
     int num_binsearch = 0;
-    int num_astar=0;
-    vert_costs_buffer[0]  = 0.0;
-    vert_layer_buffer[0]  = 0;
-    vert_prev_buffer[0]   = 0;
-    vert_value_buffer[0]  = 0;
+    int num_astar = 0;
+    vert_costs_buffer[0] = 0.0;
+    vert_layer_buffer[0] = 0;
+    vert_prev_buffer[0] = 0;
+    vert_value_buffer[0] = 0;
     vert_remcap_buffer[0] = delta;
 
-    auto compare = [](vertex_t const& a, vertex_t const& b) { return a.cost > b.cost; };
-    priority_queue<vertex_t, vector<vertex_t>, decltype (compare)> prio(compare);
-    prio.push({.cost=0.0,.idx=0});
-        
+    auto compare = [](vertex_t const &a, vertex_t const &b)
+    { return a.cost > b.cost; };
+    priority_queue<vertex_t, vector<vertex_t>, decltype(compare)> prio(compare);
+    prio.push({.cost = 0.0, .idx = 0});
+
     double max_lowerbound;
     double trivial_achievable_cost;
 
-    while(!prio.empty())
+    while (!prio.empty())
     {
         int current = prio.top().idx;
         prio.pop();
@@ -161,52 +165,52 @@ void trs4slip_astar(
         if (layer == N)
         {
             int idx = current;
-            for (int i = N; i > 0; i--) 
+            for (int i = N; i > 0; i--)
             {
                 x_next_out[i - 1] = bangs[vert_value_buffer[idx]];
                 idx = vert_prev_buffer[idx];
             }
             return;
         }
-        layer ++;
+        layer++;
         for (int k = 0; k < M; k++)
         {
             int const d = bangs[k] - x[layer - 1];
             bool improve = false;
-            int const remcap = curr_remcap-abs(d);
+            int const remcap = curr_remcap - abs(d);
             if (remcap >= 0)
             {
-                double const cost = vert_costs_buffer[current] 
-                    + offset + addcost(N,d, bangs[curr_value], x ,c, layer, boundcon,lbound,rbound);
-                int const vert_idx_in_next_layer = ((layer-1)*(delta+1)+remcap)*M+k+1;
+                double const cost = vert_costs_buffer[current] + offset + addcost(N, d, bangs[curr_value], x, c, layer, boundcon, lbound, rbound);
+                int const vert_idx_in_next_layer = ((layer - 1) * (delta + 1) + remcap) * M + k + 1;
                 if (vert_costs_buffer[vert_idx_in_next_layer] > cost)
                 {
                     vert_costs_buffer[vert_idx_in_next_layer] = cost;
                     max_lowerbound = 0.0;
-                    if (layer > 1 and remcap > 0)
+                    if (layer<N and layer > 1 and remcap > 0)
                     {
-                        int const vert_idx_in_binsearch = (layer-1)*M+k+1;
+                        int const vert_idx_in_binsearch = (layer - 1) * M + k + 1;
                         for (int t = num_runs - 1; t >= 0; t--)
                         {
                             penalty = penaltylist[t];
-                            vertex_rel_t const & cost_ref = cost_dict[vert_idx_in_binsearch][t];
-                            max_lowerbound = max(max_lowerbound,-penalty*remcap + cost_ref.cost);
+                            vertex_rel_t const &cost_ref = cost_dict[vert_idx_in_binsearch][t];
+                            max_lowerbound = max(max_lowerbound, -penalty * remcap + cost_ref.cost);
                             if (cost_ref.used <= remcap)
                             {
-                                if (ub > cost_ref.cost - penalty*cost_ref.used + cost) 
+                                if (ub > cost_ref.cost - penalty * cost_ref.used + cost)
                                 {
-                                    ub = cost_ref.cost - penalty*cost_ref.used + cost;
+                                    ub = cost_ref.cost - penalty * cost_ref.used + cost;
                                     penalty_num = t;
-                                    num_binsearch= vert_idx_in_binsearch;
+                                    num_binsearch = vert_idx_in_binsearch;
                                     num_astar = vert_idx_in_next_layer;
                                     vert_layer_buffer[vert_idx_in_next_layer] = layer;
-                                    vert_value_buffer[vert_idx_in_next_layer]= k;
+                                    vert_value_buffer[vert_idx_in_next_layer] = k;
                                     vert_remcap_buffer[vert_idx_in_next_layer] = remcap;
-                                    vert_prev_buffer[vert_idx_in_next_layer]= current;
+                                    vert_prev_buffer[vert_idx_in_next_layer] = current;
                                 }
                             }
-                            if (max_lowerbound + cost > ub + max(1e-12,1e-5*abs(ub)))
-                            {
+                            if (max_lowerbound + cost > ub + max(1e-12, 1e-5 * abs(ub)) )
+                            {   
+
                                 improve = true;
                                 break;
                             }
@@ -214,36 +218,36 @@ void trs4slip_astar(
                     }
                     if (remcap == 0 and layer < N)
                     {
-                        trivial_achievable_cost = 
-                            cost + tv[layer] + abs(x[layer] - x[layer - 1] - d) + (N - layer)*offset;
-                        if (trivial_achievable_cost > ub + max(1e-12,1e-5*abs(ub)))
+                        trivial_achievable_cost =
+                            cost + tv[layer] + abs(x[layer] - x[layer - 1] - d) + (N - layer) * offset;
+                        if (trivial_achievable_cost > ub + max(1e-12, 1e-5 * abs(ub)))
                             improve = true;
-                        if (ub > trivial_achievable_cost )
+                        if (ub > trivial_achievable_cost)
                         {
                             ub = trivial_achievable_cost;
                             penalty_num = -1;
                             num_binsearch = (layer - 1) * M + k + 1;
                             num_astar = vert_idx_in_next_layer;
                             vert_layer_buffer[vert_idx_in_next_layer] = layer;
-                            vert_value_buffer[vert_idx_in_next_layer]= k;
+                            vert_value_buffer[vert_idx_in_next_layer] = k;
                             vert_remcap_buffer[vert_idx_in_next_layer] = remcap;
-                            vert_prev_buffer[vert_idx_in_next_layer]= current;
+                            vert_prev_buffer[vert_idx_in_next_layer] = current;
                         }
                     }
                     if (!improve)
                     {
                         vert_layer_buffer[vert_idx_in_next_layer] = layer;
-                        vert_value_buffer[vert_idx_in_next_layer]= k;
+                        vert_value_buffer[vert_idx_in_next_layer] = k;
                         vert_remcap_buffer[vert_idx_in_next_layer] = remcap;
-                        vert_prev_buffer[vert_idx_in_next_layer]= current;
+                        vert_prev_buffer[vert_idx_in_next_layer] = current;
                         if (layer == N)
-                            prio.push({.cost=cost,.idx=vert_idx_in_next_layer});
-                        else 
+                            prio.push({.cost = cost, .idx = vert_idx_in_next_layer});
+                        else
                         {
                             if (remcap == 0)
-                                prio.push({.cost=cost+tv[layer]+abs(x[layer]-x[layer-1]-d)+(N-layer)*offset,.idx=vert_idx_in_next_layer});
+                                prio.push({.cost = cost + tv[layer] + abs(x[layer] - x[layer - 1] - d) + (N - layer) * offset, .idx = vert_idx_in_next_layer});
                             else
-                                prio.push({.cost=cost+max_lowerbound,.idx=vert_idx_in_next_layer});
+                                prio.push({.cost = cost + max_lowerbound, .idx = vert_idx_in_next_layer});
                         }
                     }
                 }
@@ -254,14 +258,14 @@ void trs4slip_astar(
     }
 
     std::cout << "Warning: Rounding Errors, astar failed, returned solution might be suboptimal" << std::endl;
-    
+
     int iter_num = num_astar;
     int const vert_layer_start = vert_layer_buffer[iter_num];
     int vl = vert_layer_start;
-    for(; iter_num > 0; iter_num = vert_prev_buffer[iter_num])
+    for (; iter_num > 0; iter_num = vert_prev_buffer[iter_num])
         x_next_out[--vl] = bangs[vert_value_buffer[iter_num]];
 
-    if (penalty_num<0)
+    if (penalty_num < 0)
         copy(&x[vert_layer_start], &x[N], &x_next_out[vert_layer_start]);
     else
     {
@@ -271,11 +275,11 @@ void trs4slip_astar(
             x_next_out[0] = bangs[(iter_num - 1) % M];
             vl = 1;
         }
-        iter_num =  num_binsearch;
-        for(; vl < N; vl++)
+        iter_num = num_binsearch;
+        for (; vl < N; vl++)
         {
             iter_num = cost_dict[iter_num][penalty_num].prev;
-            x_next_out[vl] =  bangs[(iter_num - 1) % M];
+            x_next_out[vl] = bangs[(iter_num - 1) % M];
         }
     }
 }
@@ -309,17 +313,17 @@ bool binsearch(
             cmax[i] = max_element;
     }
 
-    vector<double> relaxed_costs(N*M+1);
-    vector<int> relaxed_prev(N*M+1);
-    vector<int> relaxed_used(N*M+1);
-    vector<int> relaxed_value(N*M+1);
+    vector<double> relaxed_costs(N * M + 1);
+    vector<int> relaxed_prev(N * M + 1);
+    vector<int> relaxed_used(N * M + 1);
+    vector<int> relaxed_value(N * M + 1);
 
     assert(cmax[0] >= 0.);
 
     double upper = cmax[0] + 2. + 1e-5;
     double lower = 0.0;
     bool optimal = false;
-    for (int t=0; t < num_runs; t++)
+    for (int t = 0; t < num_runs; t++)
     {
         if (upper - lower < BIN_SEARCH_EPS)
         {
@@ -330,37 +334,35 @@ bool binsearch(
         double const penalty = (upper + lower) / 2.0;
         for (int k = 0; k < M; k++)
         {
-            relaxed_costs[N*M-k]=0;
-            if (boundcon) {
-                relaxed_costs[N*M-k]= abs(rbound - bangs[M-1-k]);
+            relaxed_costs[N * M - k] = 0;
+            if (boundcon)
+            {
+                relaxed_costs[N * M - k] = abs(rbound - bangs[M - 1 - k]);
             }
-            relaxed_prev[N*M-k]=-1;
-            relaxed_used[N*M-k]=0;
-            relaxed_value[N*M-k]=M-1-k;
+            relaxed_prev[N * M - k] = -1;
+            relaxed_used[N * M - k] = 0;
+            relaxed_value[N * M - k] = M - 1 - k;
         }
 
         for (int k = 0; k < N - 1; k++)
         {
             for (int l = 0; l < M; l++)
             {
-                int const cost_dict_idx = (N - k)*M - l;
+                int const cost_dict_idx = (N - k) * M - l;
                 cost_dict_out[cost_dict_idx].push_back(
                     {.cost = relaxed_costs[cost_dict_idx],
-                    .used = relaxed_used[cost_dict_idx],
-                    .prev = relaxed_prev[cost_dict_idx]}
-                );
+                     .used = relaxed_used[cost_dict_idx],
+                     .prev = relaxed_prev[cost_dict_idx]});
                 if (l == 0)
                 {
                     int const d = bangs[M - 1 - l] - x[N - 1 - k];
                     for (int o = 0; o < M; o++)
                     {
-                        int const im_cost_idx = (N - 2 - k)*M + o + 1;
+                        int const im_cost_idx = (N - 2 - k) * M + o + 1;
                         relaxed_costs[im_cost_idx] =
-                                relaxed_costs[cost_dict_idx]
-                                + abs(bangs[M - 1 - l] - bangs[o])
-                                + c[N-1-k]*d+offset+abs(d)*penalty;
+                            relaxed_costs[cost_dict_idx] + abs(bangs[M - 1 - l] - bangs[o]) + c[N - 1 - k] * d + offset + abs(d) * penalty;
                         relaxed_prev[im_cost_idx] = cost_dict_idx;
-                        relaxed_used[im_cost_idx] = relaxed_used[cost_dict_idx]+abs(d);
+                        relaxed_used[im_cost_idx] = relaxed_used[cost_dict_idx] + abs(d);
                         relaxed_value[im_cost_idx] = o;
                     }
                 }
@@ -369,15 +371,13 @@ bool binsearch(
                     int const d = bangs[M - 1 - l] - x[N - 1 - k];
                     for (int o = 0; o < M; o++)
                     {
-                        int const im_cost_idx = (N - 2 - k)*M + o + 1;
+                        int const im_cost_idx = (N - 2 - k) * M + o + 1;
                         double const cost =
-                                relaxed_costs[cost_dict_idx]
-                                + abs(bangs[M - 1 - l] - bangs[o])
-                                + c[N - 1 - k]*d + offset + abs(d)*penalty;
-                        if (cost < relaxed_costs[im_cost_idx]) 
+                            relaxed_costs[cost_dict_idx] + abs(bangs[M - 1 - l] - bangs[o]) + c[N - 1 - k] * d + offset + abs(d) * penalty;
+                        if (cost < relaxed_costs[im_cost_idx])
                         {
                             relaxed_costs[im_cost_idx] = cost;
-                            relaxed_prev[im_cost_idx] = (N-k)*M-l;
+                            relaxed_prev[im_cost_idx] = (N - k) * M - l;
                             relaxed_used[im_cost_idx] = relaxed_used[cost_dict_idx] + abs(d);
                             relaxed_value[im_cost_idx] = o;
                         }
@@ -385,40 +385,51 @@ bool binsearch(
                 }
             }
         }
-        for(int k = 0; k < M; k++)
+        for (int k = 0; k < M; k++)
         {
-            relaxed_costs[k+1] =
-                    relaxed_costs[k+1]
-                    + c[0] * (bangs[k] - x[0]) + penalty*abs(bangs[k]- x[0]) + offset;
-            relaxed_used[k+1] = relaxed_used[k+1] + abs((bangs[k] - x[0]));
-            cost_dict_out[k+1].push_back(
-                {.cost = relaxed_costs[k+1],
-                .used = relaxed_used[k+1],
-                .prev = relaxed_prev[k+1]}
-            );
+            relaxed_costs[k + 1] =
+                relaxed_costs[k + 1] + c[0] * (bangs[k] - x[0]) + penalty * abs(bangs[k] - x[0]) + offset;
+            relaxed_used[k + 1] = relaxed_used[k + 1] + abs((bangs[k] - x[0]));
+            cost_dict_out[k + 1].push_back(
+                {.cost = relaxed_costs[k + 1],
+                 .used = relaxed_used[k + 1],
+                 .prev = relaxed_prev[k + 1]});
         }
-
         int max_cost_idx = 1;
-        double max_cost = relaxed_costs[max_cost_idx];
-        for(int k = 1; k < M; k++)
-        {
-            if (max_cost > relaxed_costs[k + 1])
+        double max_cost = relaxed_costs[max_cost_idx] ;
+        if (!boundcon) {
+            
+            for (int k = 1; k < M; k++)
             {
-                max_cost = relaxed_costs[k + 1];
-                max_cost_idx = k + 1;
+                if (max_cost > relaxed_costs[k + 1] )
+                {
+                    max_cost = relaxed_costs[k + 1] ;
+                    max_cost_idx = k + 1;
+                }
+            }
+        }
+        if (boundcon) {
+            max_cost_idx = 1;
+            max_cost = relaxed_costs[max_cost_idx] + abs(bangs[0] -lbound);
+            for (int k = 1; k < M; k++)
+            {
+                if (max_cost > relaxed_costs[k + 1] + abs(bangs[k] - lbound ))
+                {
+                    max_cost = relaxed_costs[k + 1] + abs(bangs[k] - lbound );
+                    max_cost_idx = k + 1;
+                }
             }
         }
         cost_dict_out[0].push_back(
-            {.cost = relaxed_costs[max_cost_idx],
-            .used = relaxed_used[max_cost_idx],
-            .prev = max_cost_idx}
-        );
+            {.cost = max_cost,
+             .used = relaxed_used[max_cost_idx],
+             .prev = max_cost_idx});
 
         penaltylist_out.push_back(penalty);
 
         if (relaxed_used[max_cost_idx] > delta)
             lower = penalty;
-        else 
+        else
         {
             if (relaxed_used[max_cost_idx] == delta)
             {
@@ -430,9 +441,9 @@ bool binsearch(
                 }
                 return optimal;
             }
-            if (ub > relaxed_costs[max_cost_idx] - relaxed_used[max_cost_idx]*penalty)
+            if (ub > max_cost - relaxed_used[max_cost_idx] * penalty)
             {
-                ub = relaxed_costs[max_cost_idx] - relaxed_used[max_cost_idx]*penalty;
+                ub = max_cost- relaxed_used[max_cost_idx] * penalty;
                 penalty_num = t;
             }
             upper = penalty;
