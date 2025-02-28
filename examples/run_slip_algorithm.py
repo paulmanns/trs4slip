@@ -10,7 +10,7 @@ import trs4slip
 def eval_tv(x):
     return np.sum(np.abs(x[1:] - x[:-1]))
 
-def slip(eval_f, eval_jac, x0, lo_bangs, alpha, h, Delta0, sigma, maxiter, use_astar=False):
+def slip(eval_f, eval_jac, x0, lo_bangs, alpha, h, Delta0, sigma, maxiter, use_astar=True):
     assert x0.ndim == 1
     assert lo_bangs.ndim == 1
     N, M = x0.shape[0], lo_bangs.shape[0]
