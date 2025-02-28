@@ -71,6 +71,10 @@ The python package provides a function `run` that encapsulates
 the C++-function `trs4slip_astar`, which hints at the fact that a variant
 of the A\* algorithm is used to solve the subproblems. 
 
+The python package provides a function `run_top` that encapsulates
+the C++-function `trs4slip_top`, which hints at the fact that a variant
+of the topological sorting-based algorithm is used to solve the subproblems. 
+
 The C++ interface is as follows.
 
 ```cpp
@@ -109,6 +113,38 @@ void trs4slip_astar(
 * ```lbound```: left boundary value (only read if boundcon not false).
 * ```rbound```: right boundary value (only read if boundcon not false).
 
+```cpp
+void trs4slip_top(
+    int32_t * x_next_out,
+    double const *c,
+    int32_t const *x,
+    int32_t const *bangs,
+    double const * switchingcost,
+    int const delta,
+    int const N,
+    int const M,
+    int actbounds,
+    double leftbound,
+    double rightbound,
+    double switchingcostleft,
+    double switchingcostright
+);
+
+```
+* ```x_next_out```: used to store (and return) the solution computed by the subproblem solver. The user needs to provide an integer array of size N if N denotes the number of discretization intervals for the control. The quantity corresponds to ```x + d``` in [1].
+* ```c```: used to store the cost coefficients (see (TR-IP) on p. 4 in [1]). The user needs to provide the cost as a double array of size N. The quantity corresponds to ```c``` in [1].
+* ```x```: used to store the current iterate. The user needs to provide the current iterate as an integer array of size N if N denotes the number of discretization intervals for the control. The integers need to be elements of bangs (below). The quantity corresponds to ```x``` in [1].
+* ```bangs```: used to store the feasible control realizations. The user needs to provide an integer array of size M if N denotes the number of feasible control realizations. The quantity corresponds to &Xi; in [1].
+* ```switchingcost```: used to store switching cost coefficients for the jump points between the interior intervals. The user needs to provide double array of size N - 1. Setting all values to 1 gives the total variation.
+* ```delta```: used to store the trust-region radius as an integer. It is the L1-norm-value scaled by N.
+* ```N```: number of discretization intervals as integer.
+* ```M```: number of discrete realizations as integer.
+* ```actbounds```: flag that indicates if Dirichlet boundary conditions are supplied for x (implying that jumps to these boundary values are also taken into account in the objective value).
+* ```leftbound```: left boundary value (only read if actbounds not false).
+* ```rightbound```: right boundary value (only read if actbounds not false).
+* ```switchingcostleft```: switching cost coefficient for the jump point to the left boundary value (only read if actbounds not false).
+* ```switchingcostright```: switching cost coefficient for the jump point to the right boundary value (only read if actbounds not false).
+
 The python interface is as follows.
 
 ```python
@@ -126,6 +162,21 @@ def run(np.int32_t[::1] x_next not None,
         double lbound,
         double rbound
         ): 
+```
+
+```python
+def run_top(np.int32_t[::1] x_next not None, # output argument
+        double[::1] c not None,
+        np.int32_t[::1] x not None,
+        np.int32_t[::1] bangs not None,
+        double[::1] switchingcost not None,
+        int delta,
+        int actbounds,
+        double leftbound,
+        double rightbound,
+        double switchcostleft,
+        double switchcostright
+        ):
 ```
 
 The variables are the same as in the C++ case but N and M are deduced from the given numpy arrays.
