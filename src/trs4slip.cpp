@@ -452,3 +452,98 @@ bool binsearch(
     return optimal;
 }
 
+void trs4slip_top(
+    int32_t * x_next_out,
+    double const * c,
+    int32_t const * x,
+    int32_t const * bangs,
+    double const * switchingcost,    
+    int const Delta,
+    int const N,
+    int const M,
+    int actbounds,
+    double leftbound,
+    double rightbound,
+    double switchcostleft,
+    double switchcostright) {
+
+    int d;
+    int usedcap;
+    int index;
+    int predindex;
+    int dabs;
+    double bestcost;
+    int Deltaplus1 = Delta+1;
+    int nmalm = N*M;
+    double finalcost =  std::numeric_limits<double>::max();
+    int bestvert=0;
+    double nodecost;
+    double newcost;
+    double precost;
+    vector<double> costvec1(nmalm*(Deltaplus1), std::numeric_limits<double>::max());
+    vector<int> prevvec1(nmalm*(Deltaplus1), -1);
+    vector<int> valuevec1(nmalm*(Deltaplus1), 0);   
+    
+    for (int o = 0; o < M; o++) {
+        d = bangs[o] - x[0];
+        usedcap = abs(d);
+        if (usedcap <= Delta) {
+            index = o * Deltaplus1 + usedcap;
+            if (actbounds ==1) {
+                costvec1[index] = c[0] * d+ switchcostleft*abs(x[0] + d - leftbound);
+            } else {
+                costvec1[index] = c[0] * d;
+            }
+            
+            valuevec1[index] = o;
+        }
+    }
+    for (int k = 1; k < N; k++){
+        int prevk = k-1;
+        for (int o = 0; o < M; o++) {
+            for (int p = 0; p < M; p++) {
+                d = bangs[p] - x[k];
+                precost = c[k]*d;
+                precost = precost + switchingcost[prevk] * abs(bangs[p]-bangs[o]);
+                if (k==N-1 && actbounds== 1) {
+                    precost = precost + switchcostright*abs(bangs[p]- rightbound);
+                }
+                dabs = abs(bangs[p]-x[k]);
+                index = (k*M+p)*Deltaplus1+dabs;
+                
+                predindex = (prevk*M+o)*Deltaplus1;
+                bestcost = std::numeric_limits<double>::max();
+                for (int r = Delta-dabs; r >= 0; r--) {
+                    nodecost = costvec1[predindex];
+                    if (nodecost<bestcost) {
+                        //bestcost = nodecost;
+                        newcost = nodecost + precost;
+                        if ( newcost<costvec1[index]) {
+                            costvec1[index] = newcost;
+                            prevvec1[index] = predindex;
+                            valuevec1[index] = p;
+                            if (k==N-1) {
+                                if (newcost<finalcost) {     
+                                    finalcost = newcost;
+                                    bestvert = index;
+                                }
+                            }
+                        }
+                    }
+                    predindex++;
+                    index++;
+                }
+            }
+            
+        }
+    }
+
+    int p;
+    int ctr = 0;
+    for (int j=N-1; j>=0; j--) {
+        p = valuevec1[bestvert];
+        x_next_out[ctr++] = bangs[p];
+        bestvert = prevvec1[bestvert];
+    }
+	std::reverse(&x_next_out[0], &x_next_out[N]);
+}
