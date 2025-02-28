@@ -165,7 +165,7 @@ def run(np.int32_t[::1] x_next not None,
 ```
 
 ```python
-def run_top(np.int32_t[::1] x_next not None, # output argument
+def run_top(np.int32_t[::1] x_next not None,
         double[::1] c not None,
         np.int32_t[::1] x not None,
         np.int32_t[::1] bangs not None,
