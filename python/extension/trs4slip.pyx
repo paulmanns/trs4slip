@@ -24,6 +24,24 @@ cdef extern from "trs4slip.h":
         double rbound  
     );
 
+cdef extern from "trs4slip.h":
+    void trs4slip_top(
+        int32_t * x_next_out,
+        const double * c,
+        const int32_t * x,
+        const int32_t * bangs,
+        const double * switchingcost,
+        const int Delta,
+        const int N,
+        const int M,
+        const int actbounds, 
+        double leftbound,
+        double rightbound,
+        double switchcostleft,
+        double switchcostright
+    );
+
+
 def run(np.int32_t[::1] x_next not None, # output argument
         double[::1] c not None,
         np.int32_t[::1] x not None,
@@ -53,3 +71,30 @@ def run(np.int32_t[::1] x_next not None, # output argument
                    boundcon,
                    lbound,
                    rbound);
+
+
+def run_top(np.int32_t[::1] x_next not None, # output argument
+        double[::1] c not None,
+        np.int32_t[::1] x not None,
+        np.int32_t[::1] bangs not None,
+        double[::1] switchingcost not None,
+        int delta,
+        int actbounds, 
+        double leftbound,
+        double rightbound,
+        double switchcostleft,
+        double switchcostright
+        ):       
+    trs4slip_top(&x_next[0],
+                 &c[0],
+                 &x[0],
+                 &bangs[0],
+                 &switchingcost[0],
+                 delta,
+                 x.shape[0],
+                 bangs.shape[0],
+                 actbounds,
+                 leftbound,
+                 rightbound,
+                 switchcostleft,
+                 switchcostright);

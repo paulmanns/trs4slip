@@ -10,7 +10,7 @@ import trs4slip
 def eval_tv(x):
     return np.sum(np.abs(x[1:] - x[:-1]))
 
-def slip(eval_f, eval_jac, x0, lo_bangs, alpha, h, Delta0, sigma, maxiter):
+def slip(eval_f, eval_jac, x0, lo_bangs, alpha, h, Delta0, sigma, maxiter, use_astar=False):
     assert x0.ndim == 1
     assert lo_bangs.ndim == 1
     N, M = x0.shape[0], lo_bangs.shape[0]
@@ -36,18 +36,28 @@ def slip(eval_f, eval_jac, x0, lo_bangs, alpha, h, Delta0, sigma, maxiter):
         Delta, k = Delta0, 0
         accept = False
         while Delta >= 1 and not accept and pred_positive:
-            trs4slip.run(
-                xnk, gn / alpha, xn, lo_bangs, Delta,
-                vert_costs_buffer,
-                vert_layer_buffer,
-                vert_value_buffer,
-                vert_prev_buffer,
-                vert_remcap_buffer,
-                False,
-                0,
-                0
-            )
-
+            if use_astar:
+                trs4slip.run(
+                    xnk, gn / alpha, xn, lo_bangs, Delta,
+                    vert_costs_buffer,
+                    vert_layer_buffer,
+                    vert_value_buffer,
+                    vert_prev_buffer,
+                    vert_remcap_buffer,
+                    False,
+                    0,
+                    0
+                )
+            else:
+                trs4slip.run_top(
+                    xnk, gn / alpha, xn, lo_bangs,
+                    np.ones((N - 1,)), Delta,
+                    False,
+                    0.,
+                    0.,
+                    1.,
+                    1.
+                )
             fnk = eval_f(xnk)
             tvnk = eval_tv(xnk)
 
@@ -124,9 +134,12 @@ xs = slip(eval_f, eval_jac, x, lo_bangs, alpha, h, Delta0, sigma, maxiter)
 state_vec = lg_cm.conv(xs)
 control_vec = xs
 
+print("final objective = %.2e" % eval_f(control_vec))
+
 plt.subplot(1, 2, 1)
 plt.step(np.linspace(0., 1., N), control_vec)
 plt.subplot(1, 2, 2)
 plt.plot(np.linspace(0., 1., state_vec.shape[0]), state_vec)
 
 plt.show()
+
