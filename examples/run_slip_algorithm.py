@@ -86,7 +86,7 @@ def lg_jacobian_var(x, lg_cm, di, f_vec):
     return lg_jacobian(x, lg_cm, di, f_vec)
 
 
-N = 8192
+N = 2**10
 di = create_discretization_info(-1., 1., N, 5)
 
 lo_bangs = np.array([-1, 0, 1], dtype=np.int32)
@@ -111,7 +111,7 @@ f_vec = f(di.lg_t_vec)
 eval_f = lambda x: lg_objective_var(x, lg_cm, di, f_vec)
 eval_jac = lambda x: lg_jacobian_var(x, lg_cm, di, f_vec)
 # * algorithm control
-Delta0 = N // 4
+Delta0 = N // 16
 sigma = 1e-3
 maxiter = 500
 h = 2./N
